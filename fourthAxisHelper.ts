@@ -302,6 +302,33 @@ M02
         this.resetZ();
     }
 
+    clockwiseArc(
+        relative_end_x: number,
+        relative_end_y: number,
+        relative_center_x: number,
+        relative_center_y: number,
+    ) {
+        this.setXRelative(relative_end_x);
+        this.setYRelative(relative_end_y);
+        this.#output += `G2 X${this.#x.toFixed(2)} Y${this.#y.toFixed(2)} I${relative_center_x.toFixed(2)} J${relative_center_y.toFixed(2)} \n`;
+    }
+
+    counterClockwiseArc(
+        relative_end_x: number,
+        relative_end_y: number,
+        relative_center_x: number,
+        relative_center_y: number,
+    ) {
+        this.setXRelative(relative_end_x);
+        this.setYRelative(relative_end_y);
+        this.#output += `G3 X${this.#x.toFixed(2)} Y${this.#y.toFixed(2)} I${relative_center_x.toFixed(2)} J${relative_center_y.toFixed(2)} \n`;
+    }
+
+    addCustomGCode(custom_code: string) {
+        this.#output += custom_code;
+        this.#output += `\n`;
+    }
+
     #clockwiseCircleFromLeft(circleOffset: number) {
         this.#output += `G2 X${this.#x.toFixed(2)} Y${this.#y.toFixed(2)} I${circleOffset.toFixed(2)} J0 \n`;
     }
