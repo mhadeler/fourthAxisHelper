@@ -210,6 +210,28 @@ M02
         }
     }
 
+    moveXYWithRotation(
+        xVal: number,
+        yVal: number,
+        degrees: number,
+    ) {
+        this.setX(xVal);
+        this.setY(yVal);
+        this.#a += degrees;
+        this.#output += `G1 X${this.#x.toFixed(2)} Y${this.#y.toFixed(2)} A${this.#a.toFixed(2)} \n`;
+    }
+
+    moveXYRelativeWithRotation(
+        relXAmount: number,
+        relYAmount: number,
+        degrees: number,
+    ) {
+        this.setXRelative(relXAmount);
+        this.setYRelative(relYAmount);
+        this.#a += degrees;
+        this.#output += `G1 X${this.#x.toFixed(2)} Y${this.#y.toFixed(2)} A${this.#a.toFixed(2)} \n`;
+    }
+
     #outputZ() {
         if (this.#plunge_feed_rate !== this.#current_tool.plunge_feed_rate) {
             this.#plunge_feed_rate = this.#current_tool.plunge_feed_rate;
