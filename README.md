@@ -65,6 +65,8 @@ cnc.plunge(startX - 3.5);
 cnc.generateGCode('output.gcode');
 
 ```
+#### Which Generates:
+<img width="931" height="535" alt="image" src="https://github.com/user-attachments/assets/ad197e0f-8884-432c-899e-a6b7788c3346" />
 
 ### Generating GCode
 To generate the gcode, you can simply execute your script with node. The code will be output to the file/path passed to the `generateGCode()` method.
