@@ -136,9 +136,27 @@ M02
         this.#outputX();
     }
 
+    moveXWithRotation(
+        xVal: number,
+        degrees: number,
+    ) {
+        this.setX(xVal);
+        this.#a += degrees;
+        this.#output += `G1 X${this.#x.toFixed(2)} A${this.#a.toFixed(2)} \n`;
+    }
+
     moveXRelative(relAmount: number) {
         this.setXRelative(relAmount);
         this.#outputX();
+    }
+
+    moveXRelativeWithRotation(
+        relAmount: number,
+        degrees: number,
+    ) {
+        this.setXRelative(relAmount);
+        this.#a += degrees;
+        this.#output += `G1 X${this.#x.toFixed(2)} A${this.#a.toFixed(2)} \n`;
     }
 
     #outputY() {
@@ -163,9 +181,27 @@ M02
         this.#outputY();
     }
 
+    moveYWithRotation(
+        yVal: number,
+        degrees: number,
+    ) {
+        this.setY(yVal);
+        this.#a += degrees;
+        this.#output += `G1 Y${this.#y.toFixed(2)} A${this.#a.toFixed(2)} \n`;
+    }
+
     moveYRelative(relAmount: number) {
         this.setY(this.#y + relAmount);
         this.#outputY();
+    }
+
+    moveYRelativeWithRotation(
+        relAmount: number,
+        degrees: number,
+    ) {
+        this.setYRelative(relAmount);
+        this.#a += degrees;
+        this.#output += `G1 Y${this.#y.toFixed(2)} A${this.#a.toFixed(2)} \n`;
     }
 
     resetY() { 
