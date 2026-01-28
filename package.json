@@ -4,7 +4,7 @@
   "description": "A tool to help generate fourth-axis gcode for Carvera & Carvera Air",
   "license": "ISC",
   "author": "mhadeler",
-  "type": "commonjs",
+  "type": "module",
   "main": "fourthAxisHelper.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

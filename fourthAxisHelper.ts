@@ -9,7 +9,7 @@ export type Tool = {
     plunge_feed_rate: number;
 }
 
-export type FourthAxisHelperProps = {
+export type FourthAxisConstructorOptions = {
     startX: number;
     startY?: number;
     startZ: number;
@@ -52,7 +52,7 @@ export default class FourthAxisHelper {
         tools,
         xOffset = -20.74, 
         fourth_axis_speed = 500
-    }: FourthAxisHelperProps) {
+    }: FourthAxisConstructorOptions) {
 
         this.#tools = tools;
         this.#current_tool = this.#tools[this.#currentToolNum-1];
