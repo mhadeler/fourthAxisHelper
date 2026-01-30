@@ -113,6 +113,7 @@ M02
     get x() { return this.#x - this.xOffset }
     get y() { return this.#y }
     get z() { return this.#z }
+    get current_tool() { return this.#current_tool }
 
     #outputX() {
         if (this.#feed_rate !== this.#current_tool.feed_rate) {
