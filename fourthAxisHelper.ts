@@ -68,7 +68,7 @@ export default class FourthAxisHelper {
         this.startY = startY;
         this.startZ = startZ;
         this.minZ = minZ;
-        this.maxZ = minZ;
+        this.maxZ = startZ;
         this.xOffset = xOffset;
 
         this.#x = startX + xOffset;
@@ -114,6 +114,62 @@ M02
     get y() { return this.#y }
     get z() { return this.#z }
     get current_tool() { return this.#current_tool }
+
+    move(
+        x_position?: number,
+        y_position?: number,
+        z_position?: number,
+        degrees?: number,
+    ) {
+        let line = 'G1 ';
+
+        if (x_position) {
+            this.setX(x_position);
+            line += `X${this.#x.toFixed(2)} `
+        }
+        if (y_position) {
+            this.setY(y_position);
+            line += `Y${this.#y.toFixed(2)} `
+        }
+        if (z_position) {
+            this.setZ(z_position);
+            line += `Z${this.#z.toFixed(2)} `
+        }
+        if (degrees) {
+            this.#a += degrees;
+            line += `A${this.#a.toFixed(0)} `
+        }
+        line += `\n`;
+        this.#output += line;
+    }
+
+    moveRelative(
+        x_relative?: number,
+        y_relative?: number,
+        z_relative?: number,
+        degrees?: number,
+    ) {
+        let line = 'G1 ';
+
+        if (x_relative) {
+            this.setXRelative(x_relative);
+            line += `X${this.#x.toFixed(2)} `
+        }
+        if (y_relative) {
+            this.setYRelative(y_relative);
+            line += `Y${this.#y.toFixed(2)} `
+        }
+        if (z_relative) {
+            this.setZRelative(z_relative);
+            line += `Z${this.#z.toFixed(2)} `
+        }
+        if (degrees) {
+            this.#a += degrees;
+            line += `A${this.#a.toFixed(0)} `
+        }
+        line += `\n`;
+        this.#output += line;
+    }
 
     #outputX() {
         if (this.#feed_rate !== this.#current_tool.feed_rate) {
@@ -322,7 +378,7 @@ M02
         min_x: number, 
         max_x: number, 
         radius: number, 
-        step_amount = this.#step_down
+        x_step_amount = this.#half_bit
     ) {
         this.resetZ();
         this.resetY();
@@ -332,11 +388,11 @@ M02
 
         const radiusPass = () => {
             this.rotate4thAxis(360);
-            while (this.#x > (min + this.#half_bit + step_amount)) {
-                this.moveXRelative(-step_amount);
+            while ((this.#x - this.xOffset) > (min + this.#half_bit + x_step_amount)) {
+                this.moveXRelative(-x_step_amount);
                 this.rotate4thAxis(360);
             }
-            if (this.#x > (min + this.#half_bit)) {
+            if ((this.#x - this.xOffset) > (min + this.#half_bit)) {
                 this.moveX(min + this.#half_bit);
                 this.rotate4thAxis(360);
             }
@@ -344,7 +400,7 @@ M02
 
         this.moveX(max - this.#half_bit);
 
-        while (this.#z > radius + step_amount) {
+        while (this.#z > radius + this.#step_down) {
             this.stepDown();
             radiusPass();
 
