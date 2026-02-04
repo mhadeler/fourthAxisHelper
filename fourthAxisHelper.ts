@@ -16,6 +16,7 @@ export type FourthAxisConstructorOptions = {
     minZ: number;
     tools: Tool[];
     xOffset?: number;
+    zOffset?: number;
     fourth_axis_speed?: number;
 }
 
@@ -42,7 +43,9 @@ export default class FourthAxisHelper {
     startZ: number;
     minZ: number;
     maxZ: number;
+
     xOffset: number;
+    zOffset: number;
 
     constructor ({
         startX, 
@@ -50,7 +53,8 @@ export default class FourthAxisHelper {
         startZ,
         minZ,
         tools,
-        xOffset = -20.74, 
+        xOffset = -20.74,
+        zOffset = 0,
         fourth_axis_speed = 500
     }: FourthAxisConstructorOptions) {
 
@@ -69,11 +73,13 @@ export default class FourthAxisHelper {
         this.startZ = startZ;
         this.minZ = minZ;
         this.maxZ = startZ;
+
         this.xOffset = xOffset;
+        this.zOffset = zOffset;
 
         this.#x = startX + xOffset;
         this.#y = startY;
-        this.#z = startZ;
+        this.#z = startZ + zOffset;
 
         this.#addStartCodes(fourth_axis_speed);
     }
@@ -112,7 +118,7 @@ M02
 
     get x() { return this.#x - this.xOffset }
     get y() { return this.#y }
-    get z() { return this.#z }
+    get z() { return this.#z - this.zOffset }
     get current_tool() { return this.#current_tool }
 
     move(
@@ -299,7 +305,7 @@ M02
     }
 
     setZ(zVal: number) { 
-        this.#z = this.#round2DecimalPlaces(zVal); 
+        this.#z = this.#round2DecimalPlaces(zVal + this.zOffset); 
     }
 
     setZRelative(relAmount: number) { 
@@ -317,12 +323,12 @@ M02
     }
 
     resetZ() {
-        if (this.#z !== this.startZ) {
+        if (this.z !== this.startZ) {
             this.moveZ(this.startZ);
         } 
     }
 
-    saveStartZ(newStartZ = this.#z) { this.startZ = newStartZ }
+    saveStartZ(newStartZ = this.z) { this.startZ = newStartZ }
 
     stepDown(step_amount = this.#step_down) {
         this.moveZRelative(-step_amount);
@@ -354,11 +360,11 @@ M02
         }
         this.#outputX();
 
-        while (this.#z > (end_z + this.#step_down)) {
+        while (this.z > (end_z + this.#step_down)) {
             this.stepDown();
             this.rotate4thAxis(360);
         }
-        if (this.#z > end_z) {
+        if (this.z > end_z) {
             this.moveZ(end_z);
             this.rotate4thAxis(360);
         }
@@ -388,11 +394,11 @@ M02
 
         const radiusPass = () => {
             this.rotate4thAxis(360);
-            while ((this.#x - this.xOffset) > (min + this.#half_bit + x_step_amount)) {
+            while (this.x > (min + this.#half_bit + x_step_amount)) {
                 this.moveXRelative(-x_step_amount);
                 this.rotate4thAxis(360);
             }
-            if ((this.#x - this.xOffset) > (min + this.#half_bit)) {
+            if (this.x  > (min + this.#half_bit)) {
                 this.moveX(min + this.#half_bit);
                 this.rotate4thAxis(360);
             }
@@ -400,7 +406,7 @@ M02
 
         this.moveX(max - this.#half_bit);
 
-        while (this.#z > radius + this.#step_down) {
+        while (this.z > radius + this.#step_down) {
             this.stepDown();
             radiusPass();
 
@@ -409,7 +415,7 @@ M02
             this.moveX(max - this.#half_bit);
             this.moveZRelative(-2);
         }
-        if (this.#z > radius) {
+        if (this.z > radius) {
             this.moveZ(radius);
             radiusPass();
         }
@@ -464,11 +470,11 @@ M02
 
         this.#clockwiseCircleFromLeft(circleOffset);
 
-        while (this.#z > end_z + this.#step_down) {
+        while (this.z > end_z + this.#step_down) {
             this.stepDown();
             this.#clockwiseCircleFromLeft(circleOffset);
         }
-        if (this.#z > end_z) {
+        if (this.z > end_z) {
             this.moveZ(end_z);
             this.#clockwiseCircleFromLeft(circleOffset);
         }
@@ -503,12 +509,12 @@ M02
             }
         }
 
-        while (this.#z > end_z + step_amount) {
+        while (this.z > end_z + step_amount) {
             this.moveX(max - this.#half_bit);
             this.stepDown(step_amount);
             flatteningPass();
         }
-        if (this.#z > end_z) {
+        if (this.z > end_z) {
             this.moveX(max - this.#half_bit);
             this.moveZ(end_z);
             flatteningPass();
