@@ -54,7 +54,7 @@ export default class FourthAxisHelper {
         minZ,
         tools,
         xOffset = -20.74,
-        zOffset = 0,
+        zOffset = 0.10,
         fourth_axis_speed = 500
     }: FourthAxisConstructorOptions) {
 
@@ -318,7 +318,7 @@ M02
     }
 
     moveZRelative(relAmount: number) {
-        this.setZ(this.#z + relAmount);
+        this.setZRelative(relAmount);
         this.#outputZ();
     }
 
@@ -523,6 +523,25 @@ M02
         this.resetZ();
         this.resetY();
 
+    }
+
+    peckPlunge(
+        step: number,
+        x_position?: number,
+        y_position?: number,
+        end_z: number = this.minZ,
+        feed_rate?: number,
+    ) {
+        let peckZ = this.z - step;
+
+        while (peckZ > end_z) {
+            this.plunge(x_position, y_position, peckZ, feed_rate);
+            peckZ -= step;
+        }
+
+        if (peckZ < end_z) {
+            this.plunge(x_position, y_position, end_z, feed_rate);
+        }
     }
 
     plunge(
