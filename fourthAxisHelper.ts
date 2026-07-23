@@ -59,7 +59,7 @@ export default class FourthAxisHelper {
     }: FourthAxisConstructorOptions) {
 
         this.#tools = tools;
-        this.#current_tool = this.#tools[this.#currentToolNum-1];
+        this.#current_tool = this.#tools[this.#currentToolNum-1]!;
 
         this.#half_bit = this.#current_tool.bit_width/2;
         this.#step_down = this.#current_tool.step_down;
@@ -576,7 +576,7 @@ M02
             throw new Error("Requested tool doesn't exist");
         }
 
-        this.#current_tool = this.#tools[toolNum - 1];
+        this.#current_tool = this.#tools[toolNum - 1]!;
         this.#half_bit = this.#current_tool.bit_width/2;
         this.#step_down = this.#current_tool.step_down;
 
