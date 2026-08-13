@@ -37,6 +37,7 @@ export default class FourthAxisHelper {
     #spindle_speed: number;
     #feed_rate: number;
     #plunge_feed_rate: number;
+    #fourth_axis_speed: number;
 
     startX: number;
     startY: number;
@@ -64,6 +65,7 @@ export default class FourthAxisHelper {
         this.#half_bit = this.#current_tool.bit_width/2;
         this.#step_down = this.#current_tool.step_down;
         this.#spindle_speed = this.#current_tool.spindle_speed;
+        this.#fourth_axis_speed = fourth_axis_speed;
 
         this.#feed_rate = this.#current_tool.feed_rate;
         this.#plunge_feed_rate = this.#current_tool.plunge_feed_rate;
@@ -199,6 +201,11 @@ M02
         this.#outputX();
     }
 
+    moveXRapid(xVal: number) {
+        this.setX(xVal);
+        this.#output += `G0 X${this.#x.toFixed(2)} \n`;
+    }
+
     moveXWithRotation(
         xVal: number,
         degrees: number,
@@ -211,6 +218,11 @@ M02
     moveXRelative(relAmount: number) {
         this.setXRelative(relAmount);
         this.#outputX();
+    }
+
+    moveXRelativeRapid(relAmount: number) {
+        this.setXRelative(relAmount);
+        this.#output += `G0 X${this.#x.toFixed(2)} \n`;
     }
 
     moveXRelativeWithRotation(
@@ -244,6 +256,11 @@ M02
         this.#outputY();
     }
 
+    moveYRapid(yVal: number) {
+        this.setY(yVal);
+        this.#output +=  `G0 Y${this.#y.toFixed(2)} \n`;
+    }
+
     moveYWithRotation(
         yVal: number,
         degrees: number,
@@ -256,6 +273,11 @@ M02
     moveYRelative(relAmount: number) {
         this.setY(this.#y + relAmount);
         this.#outputY();
+    }
+
+    moveYRelativeRapid(relAmount: number) {
+        this.setY(this.#y + relAmount);
+        this.#output +=  `G0 Y${this.#y.toFixed(2)} \n`;
     }
 
     moveYRelativeWithRotation(
@@ -334,11 +356,18 @@ M02
         this.moveZRelative(-step_amount);
     }
 
-    #outputA() { this.#output += `G1 A${this.#a.toFixed(0)} \n`; }
+    #outputA(speed?: number) {
+        this.#output += `G1 A${this.#a.toFixed(0)} F${speed || this.#fourth_axis_speed} \n`; 
+    }
 
-    rotate4thAxis(degrees: number) {
+    rotate4thAxis(degrees: number, speed?: number) {
         this.#a += degrees;
-        this.#outputA();
+        this.#outputA(speed);
+    }
+
+    rotate4thAxisRapid(degrees: number) {
+        this.#a += degrees;
+        this.#output += `G0 A${this.#a.toFixed(0)} \n`; 
     }
 
     cutRingAtLength(
