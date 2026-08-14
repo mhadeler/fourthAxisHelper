@@ -1,0 +1,445 @@
+import fs from 'fs';
+export default class FourthAxisHelper {
+    #x;
+    #y;
+    #z;
+    #a = 0;
+    #output = '';
+    #tools;
+    #current_tool;
+    #currentToolNum = 1;
+    #half_bit;
+    #step_down;
+    #spindle_speed;
+    #feed_rate;
+    #plunge_feed_rate;
+    #fourth_axis_speed;
+    startX;
+    startY;
+    startZ;
+    minZ;
+    maxZ;
+    xOffset;
+    zOffset;
+    constructor({ startX, startY = 0, startZ, minZ, tools, xOffset = -20.74, zOffset = 0.10, fourth_axis_speed = 500 }) {
+        this.#tools = tools;
+        this.#current_tool = this.#tools[this.#currentToolNum - 1];
+        this.#half_bit = this.#current_tool.bit_width / 2;
+        this.#step_down = this.#current_tool.step_down;
+        this.#spindle_speed = this.#current_tool.spindle_speed;
+        this.#fourth_axis_speed = fourth_axis_speed;
+        this.#feed_rate = this.#current_tool.feed_rate;
+        this.#plunge_feed_rate = this.#current_tool.plunge_feed_rate;
+        this.startX = startX;
+        this.startY = startY;
+        this.startZ = startZ;
+        this.minZ = minZ;
+        this.maxZ = startZ;
+        this.xOffset = xOffset;
+        this.zOffset = zOffset;
+        this.#x = startX + xOffset;
+        this.#y = startY;
+        this.#z = startZ + zOffset;
+        this.#addStartCodes(fourth_axis_speed);
+    }
+    #addStartCodes(fourth_axis_speed) {
+        this.#output += `\
+G90 G21 ; Absolute positioning (G90) -- millimeter units (G21)   
+T${this.#currentToolNum} M6 ; Auto tool change - no wireless probe
+M7 ; Start airflow
+G92.4 A0 R0 ; Set homing
+S${this.#spindle_speed} M3 ; Set spindle speed (rpm)
+ 
+G0 X${this.#x.toFixed(2)}
+G0 Y${this.#y.toFixed(2)}
+G1 Z${this.#z.toFixed(2)}
+G1 A${this.#a.toFixed(0)} F${fourth_axis_speed}
+; start custom gcode
+`;
+    }
+    #addEndCodes() {
+        this.#output += `\
+; end custom gcode
+G0 Z${this.maxZ + 5}
+G0 Y${this.maxZ + 5}
+M9
+M05
+G28
+M02
+`;
+    }
+    #round2DecimalPlaces(num) {
+        return Math.round((num + Number.EPSILON) * 100) / 100;
+    }
+    get x() { return this.#x - this.xOffset; }
+    get y() { return this.#y; }
+    get z() { return this.#z - this.zOffset; }
+    get current_tool() { return this.#current_tool; }
+    move(x_position, y_position, z_position, degrees) {
+        let line = 'G1 ';
+        if (x_position) {
+            this.setX(x_position);
+            line += `X${this.#x.toFixed(2)} `;
+        }
+        if (y_position) {
+            this.setY(y_position);
+            line += `Y${this.#y.toFixed(2)} `;
+        }
+        if (z_position) {
+            this.setZ(z_position);
+            line += `Z${this.#z.toFixed(2)} `;
+        }
+        if (degrees) {
+            this.#a += degrees;
+            line += `A${this.#a.toFixed(0)} `;
+        }
+        line += `\n`;
+        this.#output += line;
+    }
+    moveRelative(x_relative, y_relative, z_relative, degrees) {
+        let line = 'G1 ';
+        if (x_relative) {
+            this.setXRelative(x_relative);
+            line += `X${this.#x.toFixed(2)} `;
+        }
+        if (y_relative) {
+            this.setYRelative(y_relative);
+            line += `Y${this.#y.toFixed(2)} `;
+        }
+        if (z_relative) {
+            this.setZRelative(z_relative);
+            line += `Z${this.#z.toFixed(2)} `;
+        }
+        if (degrees) {
+            this.#a += degrees;
+            line += `A${this.#a.toFixed(0)} `;
+        }
+        line += `\n`;
+        this.#output += line;
+    }
+    #outputX() {
+        if (this.#feed_rate !== this.#current_tool.feed_rate) {
+            this.#feed_rate = this.#current_tool.feed_rate;
+            this.#output += `G1 X${this.#x.toFixed(2)} F${this.#feed_rate} \n`;
+        }
+        else {
+            this.#output += `G1 X${this.#x.toFixed(2)} \n`;
+        }
+    }
+    setX(xVal) {
+        this.#x = this.#round2DecimalPlaces(xVal + this.xOffset);
+    }
+    setXRelative(relAmount) {
+        this.#x = this.#round2DecimalPlaces(this.#x + relAmount);
+    }
+    moveX(xVal) {
+        this.setX(xVal);
+        this.#outputX();
+    }
+    moveXRapid(xVal) {
+        this.setX(xVal);
+        this.#output += `G0 X${this.#x.toFixed(2)} \n`;
+    }
+    moveXWithRotation(xVal, degrees) {
+        this.setX(xVal);
+        this.#a += degrees;
+        this.#output += `G1 X${this.#x.toFixed(2)} A${this.#a.toFixed(2)} \n`;
+    }
+    moveXRelative(relAmount) {
+        this.setXRelative(relAmount);
+        this.#outputX();
+    }
+    moveXRelativeRapid(relAmount) {
+        this.setXRelative(relAmount);
+        this.#output += `G0 X${this.#x.toFixed(2)} \n`;
+    }
+    moveXRelativeWithRotation(relAmount, degrees) {
+        this.setXRelative(relAmount);
+        this.#a += degrees;
+        this.#output += `G1 X${this.#x.toFixed(2)} A${this.#a.toFixed(2)} \n`;
+    }
+    #outputY() {
+        if (this.#feed_rate !== this.#current_tool.feed_rate) {
+            this.#feed_rate = this.#current_tool.feed_rate;
+            this.#output += `G1 Y${this.#y.toFixed(2)} F${this.#feed_rate} \n`;
+        }
+        else {
+            this.#output += `G1 Y${this.#y.toFixed(2)} \n`;
+        }
+    }
+    setY(yVal) {
+        this.#y = this.#round2DecimalPlaces(yVal);
+    }
+    setYRelative(relAmount) {
+        this.#y = this.#round2DecimalPlaces(this.#y + relAmount);
+    }
+    moveY(yVal) {
+        this.setY(yVal);
+        this.#outputY();
+    }
+    moveYRapid(yVal) {
+        this.setY(yVal);
+        this.#output += `G0 Y${this.#y.toFixed(2)} \n`;
+    }
+    moveYWithRotation(yVal, degrees) {
+        this.setY(yVal);
+        this.#a += degrees;
+        this.#output += `G1 Y${this.#y.toFixed(2)} A${this.#a.toFixed(2)} \n`;
+    }
+    moveYRelative(relAmount) {
+        this.setY(this.#y + relAmount);
+        this.#outputY();
+    }
+    moveYRelativeRapid(relAmount) {
+        this.setY(this.#y + relAmount);
+        this.#output += `G0 Y${this.#y.toFixed(2)} \n`;
+    }
+    moveYRelativeWithRotation(relAmount, degrees) {
+        this.setYRelative(relAmount);
+        this.#a += degrees;
+        this.#output += `G1 Y${this.#y.toFixed(2)} A${this.#a.toFixed(2)} \n`;
+    }
+    resetY() {
+        if (this.#y !== this.startY) {
+            this.moveY(this.startY);
+        }
+    }
+    moveXYWithRotation(xVal, yVal, degrees) {
+        this.setX(xVal);
+        this.setY(yVal);
+        this.#a += degrees;
+        this.#output += `G1 X${this.#x.toFixed(2)} Y${this.#y.toFixed(2)} A${this.#a.toFixed(2)} \n`;
+    }
+    moveXYRelativeWithRotation(relXAmount, relYAmount, degrees) {
+        this.setXRelative(relXAmount);
+        this.setYRelative(relYAmount);
+        this.#a += degrees;
+        this.#output += `G1 X${this.#x.toFixed(2)} Y${this.#y.toFixed(2)} A${this.#a.toFixed(2)} \n`;
+    }
+    #outputZ() {
+        if (this.#plunge_feed_rate !== this.#current_tool.plunge_feed_rate) {
+            this.#plunge_feed_rate = this.#current_tool.plunge_feed_rate;
+            this.#output += `G1 Z${this.#z.toFixed(2)} F${this.#plunge_feed_rate} \n`;
+        }
+        else {
+            this.#output += `G1 Z${this.#z.toFixed(2)} \n`;
+        }
+    }
+    setZ(zVal) {
+        this.#z = this.#round2DecimalPlaces(zVal + this.zOffset);
+    }
+    setZRelative(relAmount) {
+        this.#z = this.#round2DecimalPlaces(this.#z + relAmount);
+    }
+    moveZ(zVal) {
+        this.setZ(zVal);
+        this.#outputZ();
+    }
+    moveZRelative(relAmount) {
+        this.setZRelative(relAmount);
+        this.#outputZ();
+    }
+    resetZ() {
+        if (this.z !== this.startZ) {
+            this.moveZ(this.startZ);
+        }
+    }
+    saveStartZ(newStartZ = this.z) { this.startZ = newStartZ; }
+    stepDown(step_amount = this.#step_down) {
+        this.moveZRelative(-step_amount);
+    }
+    #outputA(speed) {
+        this.#output += `G1 A${this.#a.toFixed(0)} F${speed || this.#fourth_axis_speed} \n`;
+    }
+    rotate4thAxis(degrees, speed) {
+        this.#a += degrees;
+        this.#outputA(speed);
+    }
+    rotate4thAxisRapid(degrees) {
+        this.#a += degrees;
+        this.#output += `G0 A${this.#a.toFixed(0)} \n`;
+    }
+    cutRingAtLength(cut_end = 'center', cut_x_position, end_z = this.minZ, reset_cut_end_offset = true) {
+        this.resetZ();
+        if (typeof cut_x_position === 'number') {
+            this.setX(cut_x_position);
+        }
+        // Set bit width offset for cut_end settings
+        if (cut_end === 'tail') {
+            this.setXRelative(this.#half_bit);
+        }
+        else if (cut_end === 'head') {
+            this.setXRelative(-this.#half_bit);
+        }
+        this.#outputX();
+        while (this.z > (end_z + this.#step_down)) {
+            this.stepDown();
+            this.rotate4thAxis(360);
+        }
+        if (this.z > end_z) {
+            this.moveZ(end_z);
+            this.rotate4thAxis(360);
+        }
+        this.resetZ();
+        // Reset bit width offset
+        if (reset_cut_end_offset) {
+            if (cut_end === 'tail') {
+                this.moveXRelative(-this.#half_bit);
+            }
+            else if (cut_end === 'head') {
+                this.moveXRelative(this.#half_bit);
+            }
+        }
+    }
+    millToRadius(min_x, max_x, radius, x_step_amount = this.#half_bit) {
+        this.resetZ();
+        this.resetY();
+        const min = Math.min(min_x, max_x);
+        const max = Math.max(min_x, max_x);
+        const radiusPass = () => {
+            this.rotate4thAxis(360);
+            while (this.x > (min + this.#half_bit + x_step_amount)) {
+                this.moveXRelative(-x_step_amount);
+                this.rotate4thAxis(360);
+            }
+            if (this.x > (min + this.#half_bit)) {
+                this.moveX(min + this.#half_bit);
+                this.rotate4thAxis(360);
+            }
+        };
+        this.moveX(max - this.#half_bit);
+        while (this.z > radius + this.#step_down) {
+            this.stepDown();
+            radiusPass();
+            // Give Z clearance and reset X
+            this.moveZRelative(2);
+            this.moveX(max - this.#half_bit);
+            this.moveZRelative(-2);
+        }
+        if (this.z > radius) {
+            this.moveZ(radius);
+            radiusPass();
+        }
+        this.resetZ();
+    }
+    clockwiseArc(relative_end_x, relative_end_y, relative_center_x, relative_center_y) {
+        this.setXRelative(relative_end_x);
+        this.setYRelative(relative_end_y);
+        this.#output += `G2 X${this.#x.toFixed(2)} Y${this.#y.toFixed(2)} I${relative_center_x.toFixed(2)} J${relative_center_y.toFixed(2)} \n`;
+    }
+    counterClockwiseArc(relative_end_x, relative_end_y, relative_center_x, relative_center_y) {
+        this.setXRelative(relative_end_x);
+        this.setYRelative(relative_end_y);
+        this.#output += `G3 X${this.#x.toFixed(2)} Y${this.#y.toFixed(2)} I${relative_center_x.toFixed(2)} J${relative_center_y.toFixed(2)} \n`;
+    }
+    addCustomGCode(custom_code) {
+        this.#output += custom_code;
+        this.#output += `\n`;
+    }
+    #clockwiseCircleFromLeft(circleOffset) {
+        this.#output += `G2 X${this.#x.toFixed(2)} Y${this.#y.toFixed(2)} I${circleOffset.toFixed(2)} J0 \n`;
+    }
+    cutHole(radius, hole_x_position, end_z = this.minZ) {
+        this.resetZ();
+        const circleOffset = radius - this.#half_bit;
+        if (typeof hole_x_position === 'number') {
+            this.moveX(hole_x_position - circleOffset);
+        }
+        else {
+            this.moveXRelative(-circleOffset);
+        }
+        this.#clockwiseCircleFromLeft(circleOffset);
+        while (this.z > end_z + this.#step_down) {
+            this.stepDown();
+            this.#clockwiseCircleFromLeft(circleOffset);
+        }
+        if (this.z > end_z) {
+            this.moveZ(end_z);
+            this.#clockwiseCircleFromLeft(circleOffset);
+        }
+        this.moveXRelative(circleOffset);
+        this.resetZ();
+    }
+    flatten(min_x, max_x, y_deviation, end_z, step_amount = this.#step_down) {
+        this.resetZ();
+        const min = Math.min(min_x, max_x);
+        const max = Math.max(min_x, max_x);
+        this.moveY(y_deviation - this.#half_bit);
+        const flatteningPass = () => {
+            this.moveY(this.#y * -1);
+            while (this.#x > (min + this.#half_bit + step_amount)) {
+                this.moveXRelative(-step_amount);
+                this.moveY(this.#y * -1);
+            }
+            if (this.#x > (min + this.#half_bit)) {
+                this.moveX(min + this.#half_bit);
+                this.moveY(this.#y * -1);
+            }
+        };
+        while (this.z > end_z + step_amount) {
+            this.moveX(max - this.#half_bit);
+            this.stepDown(step_amount);
+            flatteningPass();
+        }
+        if (this.z > end_z) {
+            this.moveX(max - this.#half_bit);
+            this.moveZ(end_z);
+            flatteningPass();
+        }
+        this.resetZ();
+        this.resetY();
+    }
+    peckPlunge(step, x_position, y_position, end_z = this.minZ, feed_rate) {
+        let peckZ = this.z - step;
+        while (peckZ > end_z) {
+            this.plunge(x_position, y_position, peckZ, feed_rate);
+            peckZ -= step;
+        }
+        if (peckZ < end_z) {
+            this.plunge(x_position, y_position, end_z, feed_rate);
+        }
+    }
+    plunge(x_position, y_position, end_z = this.minZ, feed_rate) {
+        this.resetZ();
+        if (typeof x_position === 'number') {
+            this.moveX(x_position);
+        }
+        if (typeof y_position === 'number') {
+            this.moveX(y_position);
+        }
+        if (feed_rate && typeof feed_rate === 'number') {
+            const temp_feed_rate = this.#current_tool.plunge_feed_rate;
+            this.#current_tool.plunge_feed_rate = feed_rate;
+            this.moveZ(end_z);
+            this.resetZ();
+            this.#current_tool.plunge_feed_rate = temp_feed_rate;
+        }
+        else {
+            this.moveZ(end_z);
+            this.resetZ();
+        }
+    }
+    toolChange(toolNum = this.#currentToolNum + 1) {
+        if (!this.#tools[toolNum - 1]) {
+            throw new Error("Requested tool doesn't exist");
+        }
+        this.#current_tool = this.#tools[toolNum - 1];
+        this.#half_bit = this.#current_tool.bit_width / 2;
+        this.#step_down = this.#current_tool.step_down;
+        this.#output += `T${toolNum} M6 \n`;
+        this.#spindle_speed = this.#current_tool.spindle_speed;
+        this.#output += `S${this.#spindle_speed} M3 \n`;
+        this.#currentToolNum = toolNum;
+    }
+    generateGCode(file) {
+        this.#addEndCodes();
+        const filepath = file.includes('/') ? file : `./${file}`;
+        fs.writeFile(filepath, this.#output, (err) => {
+            if (err) {
+                return console.log(err);
+            }
+            console.log('File saved successfully.');
+        });
+    }
+}
+//# sourceMappingURL=fourthAxisHelper.js.map

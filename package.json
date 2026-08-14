@@ -1,11 +1,11 @@
 {
   "name": "@mhadeler/fourth_axis_helper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A tool to help generate fourth-axis gcode for Carvera & Carvera Air",
   "license": "ISC",
   "author": "mhadeler",
   "type": "module",
-  "main": "fourthAxisHelper.ts",
+  "main": "fourthAxisHelper.js",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
@@ -14,9 +14,11 @@
     "url": "git+https://github.com"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
   },
   "devDependencies": {
-    "@types/node": "^25.0.10"
+    "@types/node": "^25.9.5",
+    "typescript": "^7.0.2"
   }
 }
