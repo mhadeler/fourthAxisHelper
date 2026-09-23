@@ -40,6 +40,9 @@ export default class FourthAxisHelper {
         this.#x = startX + xOffset;
         this.#y = startY;
         this.#z = startZ + zOffset;
+        for (const tool in tools) {
+            this.#output += `; T${parseInt(tool) + 1} - ${tools[tool]?.tool_name} \n`;
+        }
         this.#addStartCodes(fourth_axis_speed);
     }
     #addStartCodes(fourth_axis_speed) {

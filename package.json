@@ -1,6 +1,6 @@
 {
   "name": "@mhadeler/fourth_axis_helper",
-  "version": "1.0.1",
+  "version": "1.0.4",
   "description": "A tool to help generate fourth-axis gcode for Carvera & Carvera Air",
   "license": "ISC",
   "author": "mhadeler",
